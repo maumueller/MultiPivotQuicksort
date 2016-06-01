@@ -1,0 +1,8 @@
+#include "qsort1.h"
+#include "qsort1is.h"
+#include "qsort2-larger.h"
+#include "qsort2-yaro.h"
+#include "qsort2-sample.h"
+#include "qsort2-count.h"
+//#include "qsort3.h"
+//#include "qsort1lomuto.h"
