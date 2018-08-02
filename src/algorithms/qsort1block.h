@@ -21,48 +21,65 @@
  *****************************************************************************/
 
 #include <algorithm>
+#include <iostream>
 
-namespace qsort1lomuto {
+namespace qsort1lomutoblock {
+
+#define BLOCKSIZE 512
 
 template <typename Iterator>
-void ptrQuickSortLR(Iterator lo, Iterator hi)
+void sort(Iterator lo, Iterator hi)
 {
     typedef typename std::iterator_traits<Iterator>::value_type value_type;
+    typedef typename std::iterator_traits<Iterator>::difference_type index;
 
-    value_type pivot = *hi;
+    index block[BLOCKSIZE];
+    Iterator pivot_position;
     
-    if (lo + 16 >= hi)
+	if (lo + 16 >= hi) {
         return InsertionSort(lo, hi - lo + 1);
-
-    Iterator i = lo, j = i;
-
-    while (j < hi && pivot < *j)
-        j++;
-
-    if (j == hi)
-    {
-        std::swap(*i, *hi);
-        ptrQuickSortLR(i + 1, hi);
-        return;
     }
-    std::swap(*i, *j);
-    j++;
-    while (j < hi)
-    {
-        auto tmp = *j;
-        auto smaller = (tmp < pivot);
-        i += smaller;
-        auto delta = smaller * (j - i);
-        auto s = i + delta;
-        auto t = j - delta;
-        *s = *i;
-        *t = tmp;
-        j++;
+	else if (lo + 100 < hi) {
+	    pivot_position = pivot_strategies::median_of_5_medians_of_5(lo, hi);
     }
-    std::swap(*(++i), *hi);
+    else {
+        pivot_position = pivot_strategies::median_of_3(lo, hi);
+    }
+	    
 
-    ptrQuickSortLR(lo, i - 1);
-    ptrQuickSortLR(i + 1, hi);
+    std::iter_swap(pivot_position, hi);
+    pivot_position = hi;
+    const value_type pivot = *hi;
+
+    Iterator counter = lo, offset = lo;
+    int num_left = 0;
+
+    while (hi - counter > BLOCKSIZE) {
+        for (index j = 0; j < BLOCKSIZE; ++j) {
+            block[num_left] = j;
+            num_left += (pivot > counter[j]);
+        }
+        for (index j = 0; j < num_left; j++) {
+            std::iter_swap(offset, counter + block[j]);
+            offset++;
+        }
+        num_left = 0;
+        counter += BLOCKSIZE;
+    }
+    
+    for (index j = 0; j < hi - counter; ++j) {
+        block[num_left] = j;
+        num_left += (pivot > counter[j]);
+    }
+    for (index j = 0; j < num_left; j++) {
+        std::iter_swap(offset, counter + block[j]);
+        offset++;
+    }
+
+    std::iter_swap(offset, pivot_position);
+    
+    sort(lo, offset - 1);
+    sort(offset + 1, hi);
 }
 
 template <typename ValueType>
@@ -73,9 +90,9 @@ void qsort1()
     ValueType* input = (ValueType*)g_input;
     size_t n = g_input_size / sizeof(ValueType);
 
-    ptrQuickSortLR(input, input + n-1);
+    sort(input, input + n - 1);
 }
 
-CONTESTANT_REGISTER_ALL(qsort1, "qsort1lomuto", "Quicksort, single pivot")
+CONTESTANT_REGISTER_ALL(qsort1, "qsort1lomutoblock", "Quicksort, single pivot, lomuto, block")
 
 } // namespace qsort1is
