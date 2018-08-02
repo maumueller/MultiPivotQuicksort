@@ -88,6 +88,8 @@ void*           g_input = NULL;         // pointer to first item
 size_t          g_input_size = 0;       // total size of data
 size_t          g_seed;                 // current seed for rng
 size_t		g_id = 0;
+size_t          g_pivot_switch = 0; 
+size_t          g_block_size = 128; 
 
 long long       g_assignments = 0;
 long long       scanned_element_cnt = 0;
@@ -400,8 +402,11 @@ void Contestant_Array::real_run()
 
     g_stats >> "time" <<  std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() 
             >> "repeats_inner" << repeats_inner
+            >> "pivot_switch" << g_pivot_switch 
+            >> "block_size" << g_block_size
             >> "assignments" << g_assignments
             >> "scanned-elements" << scanned_element_cnt;
+
 
     g_assignments = 0;
     scanned_element_cnt = 0;
@@ -541,6 +546,7 @@ void print_usage(const char* prog)
               << "  -i, --input <path>     Write unsorted input strings to file, usually for checking." << std::endl
               << "  -N, --no-check         Skip checking of sorted order." << std::endl
               << "  -o, --output <path>    Write sorted strings to output file, terminate after first algorithm run." << std::endl
+              << "  -p, --pivot-switch     Input size on which pivot strategies are switched." << std::endl
               << "  -P, --papi <events>    Use PAPI library to monitor these events." << std::endl
               << "  -r, --repeat-inner <n> Repeat inner experiment loop a number of times and divide by repetition count." << std::endl
               << "  -R, --repeat-outer <n> Repeat experiment a number of times." << std::endl
@@ -563,6 +569,7 @@ int main(int argc, char* argv[])
         { "input",   required_argument,  0, 'i' },
         { "no-check", no_argument,       0, 'N' },
         { "output",  required_argument,  0, 'o' },
+        { "pivot-switch",    required_argument,  0, 'p' },
         { "papi",    required_argument,  0, 'P' },
         { "repeat-inner", required_argument, 0, 'r' },
         { "repeat-outer", required_argument, 0, 'R' },
@@ -599,7 +606,7 @@ int main(int argc, char* argv[])
     while (1)
     {
         int index;
-        int argi = getopt_long(argc, argv, "ha:A:FDi:No:P:r:R:s:S:t:T:z:", longopts, &index);
+        int argi = getopt_long(argc, argv, "ha:A:b:FDi:No:p:P:r:R:s:S:t:T:z:", longopts, &index);
 
         if (argi < 0) break;
 
@@ -632,6 +639,11 @@ int main(int argc, char* argv[])
             }
             gopt_algorithm_exact.push_back(optarg);
             std::cout << "Option -A: selecting algorithm " << optarg << std::endl;
+            break;
+
+        case 'b':
+            g_block_size = atoi(optarg);
+            std::cout << "Option -b: setting block size to " << optarg << std::endl;
             break;
 
         case 'D':
@@ -707,6 +719,11 @@ int main(int argc, char* argv[])
 			gopt_seeds.push_back(atoi(optarg));
 			std::cout << "Option -z: Using random seed " << optarg << " for inputs." << std::endl;
 			break;
+
+        case 'p':
+            g_pivot_switch = atoi(optarg);
+            std::cout << "Option -p: Using " << optarg << " to switch pivot strategies." << std::endl;
+            break;
 
         default:
             std::cout << "Invalid parameter: " << argi << std::endl;
