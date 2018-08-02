@@ -67,6 +67,93 @@ inline size_t rand_int(int bound)
     return dis(gen);
 }
 
+template <typename ValueType>
+struct generate_sorted {
+    void operator()() const {
+        free_data<ValueType>();
+        if (g_input_size % sizeof(ValueType) != 0) {
+            std::cout << "Input size not divisable by typesize." << std::endl;
+            abort();
+        }
+
+        size_t n = g_input_size / sizeof(ValueType);
+
+        ValueType* input = new ValueType[n];
+        g_input = (void*)input;
+        
+        for (size_t i = 0; i < n; ++i) {
+            input[i] = i;
+        }
+    }
+};
+
+template <typename ValueType>
+struct generate_reversed {
+    void operator()() const {
+        free_data<ValueType>();
+        if (g_input_size % sizeof(ValueType) != 0) {
+            std::cout << "Input size not divisable by typesize." << std::endl;
+            abort();
+        }
+
+        size_t n = g_input_size / sizeof(ValueType);
+
+        ValueType* input = new ValueType[n];
+        g_input = (void*)input;
+        
+        for (size_t i = 0; i < n; ++i) {
+            input[i] = n - i - 1;
+        }
+    }
+};
+
+template <typename ValueType>
+struct generate_equal {
+    void operator()() const {
+        free_data<ValueType>();
+        if (g_input_size % sizeof(ValueType) != 0) {
+            std::cout << "Input size not divisable by typesize." << std::endl;
+            abort();
+        }
+
+        size_t n = g_input_size / sizeof(ValueType);
+
+        ValueType* input = new ValueType[n];
+        g_input = (void*)input;
+        
+        for (size_t i = 0; i < n; ++i) {
+            input[i] = 0;
+        }
+    }
+};
+
+template <typename ValueType>
+struct generate_random_mod {
+    void operator()() const
+    {
+        // free previous data file
+        free_data<ValueType>();
+        
+        if (g_input_size % sizeof(ValueType) != 0) {
+            std::cout << "Input size not divisable by typesize." << std::endl;
+            abort();
+        }
+
+        size_t n = g_input_size / sizeof(ValueType);
+
+        ValueType* input = new ValueType[n];
+        g_input = (void*)input;
+        
+        boost::uniform_int<ValueType> dis(0, sqrt(n));
+        boost::variate_generator<boost::mt19937_64&,boost::uniform_int<ValueType> > rand (gen, dis);
+
+        for (size_t i = 0; i < n; ++i)
+        {
+            input[i] = ValueType(rand());
+        }
+    }
+};
+
 
 template <typename ValueType>
 struct generate_random {
@@ -122,6 +209,29 @@ struct generate_permutation {
 };
 
 template <typename ValueType>
+struct generate_sawtooth {
+    void operator()() const
+    {
+        // free previous data file
+        free_data<ValueType>();
+
+        if (g_input_size % sizeof(ValueType) != 0) {
+            std::cout << "Input size not divisable by typesize." << std::endl;
+            abort();
+        }
+
+        size_t n = g_input_size / sizeof(ValueType);
+
+        ValueType* input = new ValueType[n];
+        g_input = (void*)input;
+
+        for (size_t i = 0; i < n; ++i) {
+            input[i] = i % int(sqrt(n));
+        }
+    }
+};
+
+template <typename ValueType>
 struct generate_permutation_sentinel {
     void operator()() const
     {
@@ -162,6 +272,26 @@ bool load_artifical(const std::string& path)
     }
     else if (path == "sentinel-permutation") {
         type_switch<generate_permutation_sentinel>();
+        return true;
+    }
+    else if (path == "equal") {
+        type_switch<generate_equal>();
+        return true;
+    }
+    else if (path == "sorted") {
+        type_switch<generate_sorted>();
+        return true;
+    }
+    else if (path == "reversed") {
+        type_switch<generate_reversed>();
+        return true;
+    }
+    else if (path == "mod_sqrt") {
+        type_switch<generate_random_mod>();
+        return true;
+    }
+    else if (path == "sawtooth") {
+        type_switch<generate_sawtooth>();
         return true;
     }
 
